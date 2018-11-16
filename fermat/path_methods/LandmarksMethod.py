@@ -5,17 +5,18 @@ from scipy.sparse import csr_matrix, dok_matrix
 from scipy.sparse.csgraph import shortest_path
 
 from fermat.path_methods.DistanceCalculatorMethod import DistanceCalculatorMethod
-
+from fermat.clustering import do_k_medoids
 
 class DistanceOnTree:
 
-    def __init__(self, root, prev, distances):
+    def __init__(self, root, prev, distances, use_rmq=True):
         self.n = len(prev)
         self.et = self.euler_tour(root, prev)
         self.root = root
         self.distances = distances
-        self.right = self.get_right(self.et, self.n)
-        self.rmq = self.get_rmq([distances[x] for x in self.et])
+        if use_rmq:
+            self.right = self.get_right(self.et, self.n)
+            self.rmq = self.get_rmq([distances[x] for x in self.et])
 
     def euler_tour(self, root, prev):
         children = [[] for _ in prev]
@@ -41,17 +42,6 @@ class DistanceOnTree:
             res[node] = index
         return res
 
-    def get_rmq_posta(self, xs):
-        res = [xs[:]]
-        n = len(xs)
-        p = 1
-        while p < n:
-            res.append(
-                [min(res[-1][i], res[-1][i + p]) if i + p < n else res[-1][i] for i in range(n)]
-            )
-            p *= 2
-        return res
-
     def get_rmq(self, xs):
         r = np.array(xs)
         res = [r]
@@ -65,7 +55,6 @@ class DistanceOnTree:
 
         return res
 
-
     def get_lca_distance(self, a, b):
         x, y = sorted([self.right[a], self.right[b]])
         d = (y - x).bit_length() - 1
@@ -74,6 +63,8 @@ class DistanceOnTree:
     def get_distance(self, a, b):
         return 0 if a == b else self.distances[a] + self.distances[b] - 2 * self.get_lca_distance(a, b)
 
+    def root_distance(self, a):
+        return self.distances[a]
 
 class LandmarksMethod(DistanceCalculatorMethod):
 
@@ -153,7 +144,8 @@ class LandmarksMethod(DistanceCalculatorMethod):
         )
 
         for i in range(len(landmarks)):
-            landmark_tree = DistanceOnTree(landmarks[i], prev=prev[i], distances=distance[i])
+            use_rmq = self.fermat.estimator != 'no_lca'
+            landmark_tree = DistanceOnTree(landmarks[i], prev=prev[i], distances=distance[i], use_rmq=use_rmq)
             self.landmarks_trees.append(landmark_tree)
 
     def up(self, a, b):
@@ -182,8 +174,5 @@ class LandmarksMethod(DistanceCalculatorMethod):
                 res[i, j] = res[j, i] = self.get_distance(i, j)
         return res
 
-
-
-
-
-
+    def clusterize(self, k, iterations, seed):
+        return do_k_medoids(self.landmarks_trees, self.n, k, iterations, seed)

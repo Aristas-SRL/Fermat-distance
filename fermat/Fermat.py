@@ -125,3 +125,14 @@ class Fermat:
         """
 
         return self.path_method.get_distances()
+
+    def clusterize(self, k, iterations, seed=None):
+        """
+        Performs KMedoids clustering using landmarks as possibles cluster centers.
+        Only available when path_method is L or CL
+        :param k: number of clusters
+        :param iterations: number of iterations
+        :param seed:
+        :return:
+        """
+        return self.path_method.clusterize(k, iterations, seed)
