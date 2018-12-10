@@ -24,15 +24,20 @@ class DijkstraMethod(DistanceCalculatorMethod):
         rows = []
         columns = []
         values = []
-        
+
+        edges = set()
+
         for i in range(n):
             smallest_values_and_columns = heapq.nsmallest(k, zip(distances[i].tolist()[0], list(range(n))))
-            vs, cs = zip(*smallest_values_and_columns)
+            # vs, cs = zip(*smallest_values_and_columns)
 
-            rows.extend([i]*k)
-            columns.extend(cs)
-            values.extend(vs)
-        
+            for v, c in smallest_values_and_columns:
+                if (i, c) not in edges and (c, i) not in edges:
+                    rows.append(i)
+                    columns.append(c)
+                    values.append(v)
+                    edges.add((i, c))
+
         return csr_matrix((values+values, (rows+columns, columns+rows)), shape=(n, n))
 
     def get_distance(self, a, b):
