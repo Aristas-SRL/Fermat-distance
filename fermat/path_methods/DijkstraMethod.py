@@ -28,7 +28,7 @@ class DijkstraMethod(DistanceCalculatorMethod):
         edges = set()
 
         for i in range(n):
-            smallest_values_and_columns = heapq.nsmallest(k, zip(distances[i].tolist()[0], list(range(n))))
+            smallest_values_and_columns = heapq.nsmallest(k+1, zip(distances[i].tolist()[0], list(range(n))))
             # vs, cs = zip(*smallest_values_and_columns)
 
             for v, c in smallest_values_and_columns:
